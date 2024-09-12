@@ -49,6 +49,9 @@ async function run() {
             const result = await userCollections.insertOne(user)
             res.send(result)
         })
+        app.post('/add-product', async(req, res)=>{
+            const product = req.body;
+        })
     } finally {
         // // Ensures that the client will close when you finish/error
         // await client.close();
