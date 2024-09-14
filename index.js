@@ -40,21 +40,24 @@ async function run() {
         app.post('/users', async (req, res) => {
             const user = req.body;
             console.log(user)
-            // return
-            // const query = { email: user?.email };
-            // const existingUser = await userCollections.findOne(query)
-            // if (existingUser) {
-            //     return res.send({ message: 'user already exist', insertedId: null })
-            // }
             const result = await userCollections.insertOne(user)
             res.send(result)
         })
-        app.post('/add-product', async(req, res)=>{
+        // add Product API
+        app.post('/add-product', async (req, res) => {
             const product = req.body;
+            const result = await productCollections.insertOne(product)
+            res.send(result)
         })
+
+        //Get card Data form Database
+        app.get('/show-product', async(req, res)=>{
+            const result = await productCollections.find().toArray()
+            res.send(result);
+        })
+
     } finally {
-        // // Ensures that the client will close when you finish/error
-        // await client.close();
+
     }
 }
 run().catch(console.dir);
