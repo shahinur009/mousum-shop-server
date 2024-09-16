@@ -134,9 +134,10 @@ async function run() {
             const query = category ? { category } : {};
 
             const totalCount = await productCollections.countDocuments(query); // Get total product count
-            const products = await Product.find(query)
+            const products = await productCollections.find(query)
                 .skip((page - 1) * limit)
-                .limit(parseInt(limit));
+                .limit(parseInt(limit))
+                .toArray();
 
             res.json({ products, totalCount });
         });
