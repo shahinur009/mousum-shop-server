@@ -73,24 +73,33 @@ async function run() {
                 res.status(500).send({ message: 'Failed to fetch product data', error });
             }
         });
-        //Post address in Database
-        // app.post('/payment/:id', async (req, res) => {
-        //     const address = req.body;
-        //     const result = await addressCollections.insertOne(address);
-        //     res.send(result);
-        // })
 
+        // Insert customer address data in Database
         app.post('/payment', async (req, res) => {
-            const { paymentMethod, mobileNumber, screenshotUrl } = req.body;
+            const { name,
+                phone,
+                address,
+                shippingMethod,
+                coupon,
+                paymentMethod,
+                paymentMobileNumber,
+                screenshotUrl,
+                cod, } = req.body;
 
-            if (!paymentMethod || !mobileNumber || !screenshotUrl) {
-                return res.status(400).send({ success: false, message: 'All fields are required' });
-            }
+            // if (!paymentMethod || !mobileNumber || !screenshotUrl || !name || !phone || !address || !shippingMethod || !coupon || !paymentMobileNumber || !cod) {
+            //     return res.status(400).send({ success: false, message: 'All fields are required' });
+            // }
 
             const paymentData = {
+                name,
+                phone,
+                address,
+                shippingMethod,
+                coupon,
                 paymentMethod,
-                mobileNumber,
+                paymentMobileNumber,
                 screenshotUrl,
+                cod,
                 createdAt: new Date(),
             };
 
@@ -102,6 +111,36 @@ async function run() {
                 res.status(500).send({ success: false, message: 'Failed to save payment data' });
             }
         });
+        // Product delete API here:
+        app.delete('/delete/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            try {
+                const result = await productCollections.deleteOne(query);
+                if (result.deletedCount === 1) {
+                    res.status(200).send({ message: 'Product deleted successfully' });
+                } else {
+                    res.status(404).send({ message: 'Product not found' });
+                }
+            } catch (error) {
+                res.status(500).send({ message: 'Error deleting product', error });
+            }
+        });
+
+        //Get stock Data form Database
+        app.get('/stock', async (req, res) => {
+            const { page = 1, limit = 10, category = '' } = req.query;
+
+            const query = category ? { category } : {};
+
+            const totalCount = await productCollections.countDocuments(query); // Get total product count
+            const products = await Product.find(query)
+                .skip((page - 1) * limit)
+                .limit(parseInt(limit));
+
+            res.json({ products, totalCount });
+        });
+
 
 
     } finally {
