@@ -141,6 +141,49 @@ async function run() {
 
             res.json({ products, totalCount });
         });
+        //Get stock Data to update API form Database
+        app.get('/stockUpdate/:id', async (req, res) => {
+            const id = req.params.id;
+            try {
+                const query = { _id: new ObjectId(id) }; // Ensure you are searching by ObjectId
+                const product = await productCollections.findOne(query);
+                if (product) {
+                    res.status(200).json(product);
+                } else {
+                    res.status(404).json({ message: 'Product not found' });
+                }
+            } catch (error) {
+                res.status(500).json({ message: 'Error fetching product', error });
+            }
+        });
+// Update product data
+        app.put('/updateProduct/:id', async (req, res) => {
+            const id = req.params.id;
+            const updateData = req.body;
+        
+            if (!ObjectId.isValid(id)) {
+                return res.status(400).send({ error: 'Invalid Product ID' });
+            }
+        
+            try {
+                const query = { _id: new ObjectId(id) };
+                const update = {
+                    $set: {
+                        ...updateData
+                    }
+                };
+        
+                const result = await productCollections.updateOne(query, update);
+        
+                if (!result.matchedCount) {
+                    return res.status(404).send({ error: 'Product not found' });
+                }
+        
+                res.send({ message: 'Product updated successfully' });
+            } catch (error) {
+                res.status(500).send({ message: 'Failed to update product data', error });
+            }
+        });       
 
 
 
