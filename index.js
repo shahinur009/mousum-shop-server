@@ -73,35 +73,28 @@ async function run() {
                 res.status(500).send({ message: 'Failed to fetch product data', error });
             }
         });
+        // single order get by ID
+        app.get('/singleProduct/:id', async (req, res) => {
+            const id = req.params.id;
+            if (!ObjectId.isValid(id)) {
+                return res.status(400).send({ error: 'Invalid Product ID' });
+            }
+            try {
+                const query = { _id: new ObjectId(id) };
+                const result = await productCollections.findOne(query);
+                if (!result) {
+                    return res.status(404).send({ error: 'Product not found' });
+                }
+                res.send(result);
+            } catch (error) {
+                res.status(500).send({ message: 'Failed to fetch product data', error });
+            }
+        });
 
         // Insert customer address data in Database
         app.post('/payment', async (req, res) => {
-            const { name,
-                phone,
-                address,
-                shippingMethod,
-                coupon,
-                paymentMethod,
-                paymentMobileNumber,
-                screenshotUrl,
-                cod, } = req.body;
-
-            // if (!paymentMethod || !mobileNumber || !screenshotUrl || !name || !phone || !address || !shippingMethod || !coupon || !paymentMobileNumber || !cod) {
-            //     return res.status(400).send({ success: false, message: 'All fields are required' });
-            // }
-
-            const paymentData = {
-                name,
-                phone,
-                address,
-                shippingMethod,
-                coupon,
-                paymentMethod,
-                paymentMobileNumber,
-                screenshotUrl,
-                cod,
-                createdAt: new Date(),
-            };
+            const data = req.body;
+            const paymentData = { ...data, createAt: new Date() }
 
             try {
                 const result = await addressCollections.insertOne(paymentData);
@@ -141,6 +134,36 @@ async function run() {
 
             res.json({ products, totalCount });
         });
+        //Get order list Data form Database
+        app.get('/orderList', async (req, res) => {
+            // const { page = 1, limit = 10, category = '' } = req.query;
+
+            // const query = category ? { category } : {};
+
+            // const totalCount = await addressCollections.countDocuments(query); // Get total product count
+            const products = await addressCollections.find().toArray();
+
+            res.json({ products });
+        });
+        //Get order list details Data form Database
+        app.get('/api/details/:id', async (req, res) => {
+            const id = req.params.id;
+            if (!ObjectId.isValid(id)) {
+                return res.status(400).send({ error: 'Invalid Product ID' });
+            }
+            try {
+                const query = { _id: new ObjectId(id) };
+                const result = await addressCollections.findOne(query);
+                if (!result) {
+                    return res.status(404).send({ error: 'Product not found' });
+                }
+                res.send(result);
+            } catch (error) {
+                res.status(500).send({ message: 'Failed to fetch product data', error });
+            }
+        });
+
+
         //Get stock Data to update API form Database
         app.get('/stockUpdate/:id', async (req, res) => {
             const id = req.params.id;
@@ -156,15 +179,15 @@ async function run() {
                 res.status(500).json({ message: 'Error fetching product', error });
             }
         });
-// Update product data
+        // Update product data
         app.put('/updateProduct/:id', async (req, res) => {
             const id = req.params.id;
             const updateData = req.body;
-        
+
             if (!ObjectId.isValid(id)) {
                 return res.status(400).send({ error: 'Invalid Product ID' });
             }
-        
+
             try {
                 const query = { _id: new ObjectId(id) };
                 const update = {
@@ -172,18 +195,18 @@ async function run() {
                         ...updateData
                     }
                 };
-        
+
                 const result = await productCollections.updateOne(query, update);
-        
+
                 if (!result.matchedCount) {
                     return res.status(404).send({ error: 'Product not found' });
                 }
-        
+
                 res.send({ message: 'Product updated successfully' });
             } catch (error) {
                 res.status(500).send({ message: 'Failed to update product data', error });
             }
-        });       
+        });
 
 
 
