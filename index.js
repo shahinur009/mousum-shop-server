@@ -104,6 +104,67 @@ async function run() {
                 res.status(500).send({ success: false, message: 'Failed to save payment data' });
             }
         });
+
+        // Order Status change API
+        app.get('/api/details/:id', async (req, res) => {
+            const { id } = req.params;
+
+            try {
+                const order = await addressCollections.findOne({ _id: new ObjectId(id) });
+                if (!order) {
+                    return res.status(404).send('Order not found');
+                }
+
+                const { product, ...orderDetails } = order;
+                res.json({ ...orderDetails, product: { ...product, _id: undefined } }); // Exclude product ID
+            } catch (error) {
+                console.error('Error fetching order details:', error);
+                res.status(500).send('Server error');
+            }
+        });
+
+        // Route to update order status from pending to processing
+        app.put('/api/orders/:id/status', async (req, res) => {
+            const { id } = req.params;
+
+            try {
+                const result = await addressCollections.updateOne(
+                    { _id: new ObjectId(id) }, // Convert the string ID to ObjectId
+                    { $set: { status: 'progress' } }
+                );
+
+                if (result.matchedCount === 0) {
+                    return res.status(404).send('Order not found');
+                }
+
+                const updatedOrder = await addressCollections.findOne({ _id: new ObjectId(id) });
+                res.json(updatedOrder);
+            } catch (error) {
+                console.error('Error updating order status:', error);
+                res.status(500).send('Server error');
+            }
+        });
+        // Route to update order status from processing to Done
+        app.put('/api/delivery-done/:id/status', async (req, res) => {
+            const { id } = req.params;
+
+            try {
+                const result = await addressCollections.updateOne(
+                    { _id: new ObjectId(id) }, // Convert the string ID to ObjectId
+                    { $set: { status: 'Done' } }
+                );
+
+                if (result.matchedCount === 0) {
+                    return res.status(404).send('Order not found');
+                }
+
+                const updatedOrder = await addressCollections.findOne({ _id: new ObjectId(id) });
+                res.json(updatedOrder);
+            } catch (error) {
+                console.error('Error updating order status:', error);
+                res.status(500).send('Server error');
+            }
+        });
         // Product delete API here:
         app.delete('/delete/:id', async (req, res) => {
             const id = req.params.id;
@@ -136,16 +197,30 @@ async function run() {
         });
         //Get order list Data form Database
         app.get('/orderList', async (req, res) => {
-            // const { page = 1, limit = 10, category = '' } = req.query;
+            const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
+            const limit = parseInt(req.query.limit) || 5; // Default to 5 items per page if not provided
+            const skip = (page - 1) * limit;
 
-            // const query = category ? { category } : {};
+            try {
+                // Get total number of products
+                const totalProducts = await addressCollections.countDocuments();
 
-            // const totalCount = await addressCollections.countDocuments(query); // Get total product count
-            const products = await addressCollections.find().toArray();
+                // Get the products for the current page
+                const products = await addressCollections.find().skip(skip).limit(limit).toArray();
 
-            res.json({ products });
+                // Send the response with products and total count
+                res.json({
+                    products,
+                    totalCount: totalProducts,
+                    totalPages: Math.ceil(totalProducts / limit),
+                    currentPage: page
+                });
+            } catch (error) {
+                console.error('Error fetching products:', error);
+                res.status(500).json({ message: 'Internal server error' });
+            }
         });
-        //Get order list details Data form Database
+        // get data for single product details by ID
         app.get('/api/details/:id', async (req, res) => {
             const id = req.params.id;
             if (!ObjectId.isValid(id)) {
