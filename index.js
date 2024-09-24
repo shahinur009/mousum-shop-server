@@ -145,26 +145,6 @@ async function run() {
             }
         });
         // Route to update order status from processing to Done
-        // app.put('/api/delivery-done/:id/status', async (req, res) => {
-        //     const { id } = req.params;
-
-        //     try {
-        //         const result = await addressCollections.updateOne(
-        //             { _id: new ObjectId(id) }, // Convert the string ID to ObjectId
-        //             { $set: { status: 'Done' } },
-        //         );
-
-        //         if (result.matchedCount === 0) {
-        //             return res.status(404).send('Order not found');
-        //         }
-
-        //         const updatedOrder = await addressCollections.findOne({ _id: new ObjectId(id) });
-        //         res.json(updatedOrder);
-        //     } catch (error) {
-        //         console.error('Error updating order status:', error);
-        //         res.status(500).send('Server error');
-        //     }
-        // });
         app.put('/api/delivery-done/:id/status', async (req, res) => {
             const { id } = req.params;
 
@@ -190,6 +170,34 @@ async function run() {
                 res.status(500).send('Server error');
             }
         });
+
+        // sales date by data get route here:
+        app.get('/api/sales', async (req, res) => {
+            const { start, end } = req.query;
+            console.log('Start Date:', start, 'End Date:', end);
+        
+            try {
+                // Convert start and end dates to Date objects
+                const startDate = new Date(start);
+                const endDate = new Date(end);
+        
+                // Fetch sales data where deliveryDoneDate is within the specified date range
+                const salesData = await addressCollections.find({
+                    deliveryDoneDate: {
+                        $gte: startDate.toISOString(), // Start date in ISO format
+                        $lte: endDate.toISOString()   // End date in ISO format
+                    }
+                }).toArray();
+        
+                // Send sales data as JSON
+                res.json(salesData);
+            } catch (error) {
+                console.error('Error fetching sales data:', error);
+                res.status(500).send('Server error');
+            }
+        });
+        
+
 
         // Product delete API here:
         app.delete('/delete/:id', async (req, res) => {
