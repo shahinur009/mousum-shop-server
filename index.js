@@ -145,13 +145,38 @@ async function run() {
             }
         });
         // Route to update order status from processing to Done
+        // app.put('/api/delivery-done/:id/status', async (req, res) => {
+        //     const { id } = req.params;
+
+        //     try {
+        //         const result = await addressCollections.updateOne(
+        //             { _id: new ObjectId(id) }, // Convert the string ID to ObjectId
+        //             { $set: { status: 'Done' } },
+        //         );
+
+        //         if (result.matchedCount === 0) {
+        //             return res.status(404).send('Order not found');
+        //         }
+
+        //         const updatedOrder = await addressCollections.findOne({ _id: new ObjectId(id) });
+        //         res.json(updatedOrder);
+        //     } catch (error) {
+        //         console.error('Error updating order status:', error);
+        //         res.status(500).send('Server error');
+        //     }
+        // });
         app.put('/api/delivery-done/:id/status', async (req, res) => {
             const { id } = req.params;
 
             try {
                 const result = await addressCollections.updateOne(
                     { _id: new ObjectId(id) }, // Convert the string ID to ObjectId
-                    { $set: { status: 'Done' } }
+                    {
+                        $set: {
+                            status: 'Done',
+                            deliveryDoneDate: new Date().toLocaleString().split(",")[0] // Add current date and time
+                        }
+                    }
                 );
 
                 if (result.matchedCount === 0) {
@@ -165,6 +190,7 @@ async function run() {
                 res.status(500).send('Server error');
             }
         });
+
         // Product delete API here:
         app.delete('/delete/:id', async (req, res) => {
             const id = req.params.id;
