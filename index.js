@@ -30,6 +30,7 @@ async function run() {
         const productCollections = client.db('airePro').collection('products')
         const paymentCollections = client.db('airePro').collection('payments')
         const addressCollections = client.db('airePro').collection('address')
+        const bannerCollections = client.db('airePro').collection('banners')
 
         // get users from db
         app.get('/users', async (req, res) => {
@@ -154,7 +155,7 @@ async function run() {
                     {
                         $set: {
                             status: 'Done',
-                            deliveryDoneDate: new Date().toISOString().split("T")[0] 
+                            deliveryDoneDate: new Date().toISOString().split("T")[0]
                         }
                     }
                 );
@@ -175,18 +176,18 @@ async function run() {
         app.get('/api/sales', async (req, res) => {
             const { start, end } = req.query;
             console.log('Start Date:', start, 'End Date:', end);
-        
+
             try {
                 const salesData = await addressCollections.find({
                     deliveryDoneDate: {
-                        $gte: start, 
-                        $lte: end   
+                        $gte: start,
+                        $lte: end
                     }
                 }).toArray();
-                if(!salesData){
+                if (!salesData) {
                     return res.json('data not found')
                 }
-        
+
                 // Send sales data as JSON
                 res.json(salesData);
             } catch (error) {
@@ -194,7 +195,7 @@ async function run() {
                 res.status(500).send('Server error');
             }
         });
-        
+
 
 
         // Product delete API here:
@@ -314,6 +315,54 @@ async function run() {
                 res.status(500).send({ message: 'Failed to update product data', error });
             }
         });
+
+        // Banner section API's here:
+        // POST endpoint to save banner data
+        app.post("/banner-change", async (req, res) => {
+            const data = req.body;
+            console.log(data);
+
+            try {
+                // Insert the received data into the banner collection
+                const result = await bannerCollections.insertOne(data);
+
+                // Respond with success and the inserted ID
+                res.json({ message: "Banner data saved successfully!", insertedId: result.insertedId });
+            } catch (error) {
+                console.error("Error saving data to MongoDB", error);
+                res.status(500).json({ message: "Failed to save banner data" });
+            }
+        });
+
+        // GET endpoint to fetch all banners
+        app.get("/get-banner", async (req, res) => {
+
+            try {
+                const banners = await bannerCollections.find().toArray();
+                res.json(banners);
+            } catch (error) {
+                console.error("Error fetching banners from MongoDB", error);
+                res.status(500).json({ message: "Failed to fetch banners" });
+            }
+        });
+
+        //   Banner Deleted API's
+
+          app.delete('/banner-delete/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            try {
+                const result = await bannerCollections.deleteOne(query);
+                if (result.deletedCount === 1) {
+                    res.status(200).send({ message: 'Banner deleted successfully' });
+                } else {
+                    res.status(404).send({ message: 'Banner not found' });
+                }
+            } catch (error) {
+                res.status(500).send({ message: 'Error deleting Banner', error });
+            }
+        });
+          
 
 
 
