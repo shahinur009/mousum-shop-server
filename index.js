@@ -150,11 +150,11 @@ async function run() {
 
             try {
                 const result = await addressCollections.updateOne(
-                    { _id: new ObjectId(id) }, // Convert the string ID to ObjectId
+                    { _id: new ObjectId(id) },
                     {
                         $set: {
                             status: 'Done',
-                            deliveryDoneDate: new Date().toLocaleString().split(",")[0] // Add current date and time
+                            deliveryDoneDate: new Date().toISOString().split("T")[0] 
                         }
                     }
                 );
@@ -177,17 +177,15 @@ async function run() {
             console.log('Start Date:', start, 'End Date:', end);
         
             try {
-                // Convert start and end dates to Date objects
-                const startDate = new Date(start);
-                const endDate = new Date(end);
-        
-                // Fetch sales data where deliveryDoneDate is within the specified date range
                 const salesData = await addressCollections.find({
                     deliveryDoneDate: {
-                        $gte: startDate.toISOString(), // Start date in ISO format
-                        $lte: endDate.toISOString()   // End date in ISO format
+                        $gte: start, 
+                        $lte: end   
                     }
                 }).toArray();
+                if(!salesData){
+                    return res.json('data not found')
+                }
         
                 // Send sales data as JSON
                 res.json(salesData);
